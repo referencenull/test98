@@ -6,7 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Initialize SQLite database
-const db = new Database('inventory.db');
+const db = new Database(process.env.DATABASE_PATH || 'inventory.db');
 
 // Create items table if it doesn't exist
 db.exec(`
@@ -64,16 +64,23 @@ app.post('/api/items', (req, res) => {
     const { name, quantity, price, description } = req.body;
     
     // Validation
-    if (!name || !quantity || !price) {
+    if (!name || quantity == null || price == null) {
       return res.status(400).json({ error: 'Name, quantity, and price are required' });
     }
     
-    if (quantity < 0 || price < 0) {
+    const qty = Number(quantity);
+    const prc = Number(price);
+    
+    if (isNaN(qty) || isNaN(prc)) {
+      return res.status(400).json({ error: 'Quantity and price must be valid numbers' });
+    }
+    
+    if (qty < 0 || prc < 0) {
       return res.status(400).json({ error: 'Quantity and price must be non-negative' });
     }
     
     const insert = db.prepare('INSERT INTO items (name, quantity, price, description) VALUES (?, ?, ?, ?)');
-    const result = insert.run(name, quantity, price, description || '');
+    const result = insert.run(name, qty, prc, description || '');
     
     const newItem = db.prepare('SELECT * FROM items WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json(newItem);
@@ -86,7 +93,13 @@ app.post('/api/items', (req, res) => {
 app.delete('/api/items/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const result = db.prepare('DELETE FROM items WHERE id = ?').run(id);
+    const itemId = parseInt(id, 10);
+    
+    if (isNaN(itemId)) {
+      return res.status(400).json({ error: 'Invalid item ID' });
+    }
+    
+    const result = db.prepare('DELETE FROM items WHERE id = ?').run(itemId);
     
     if (result.changes === 0) {
       return res.status(404).json({ error: 'Item not found' });

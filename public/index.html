@@ -379,11 +379,32 @@
         document.getElementById('addItemForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            const name = document.getElementById('name').value.trim();
+            const quantity = parseInt(document.getElementById('quantity').value, 10);
+            const price = parseFloat(document.getElementById('price').value);
+            const description = document.getElementById('description').value.trim();
+            
+            // Validate parsed values
+            if (!name) {
+                showMessage('Please enter an item name', 'error');
+                return;
+            }
+            
+            if (isNaN(quantity) || quantity < 0) {
+                showMessage('Please enter a valid quantity (0 or greater)', 'error');
+                return;
+            }
+            
+            if (isNaN(price) || price < 0) {
+                showMessage('Please enter a valid price (0 or greater)', 'error');
+                return;
+            }
+            
             const formData = {
-                name: document.getElementById('name').value.trim(),
-                quantity: parseInt(document.getElementById('quantity').value),
-                price: parseFloat(document.getElementById('price').value),
-                description: document.getElementById('description').value.trim()
+                name,
+                quantity,
+                price,
+                description
             };
 
             try {
