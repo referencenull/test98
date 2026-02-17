@@ -20,26 +20,28 @@ db.exec(`
   )
 `);
 
-// Insert test data if table is empty
-const count = db.prepare('SELECT COUNT(*) as count FROM items').get();
-if (count.count === 0) {
-  const insert = db.prepare('INSERT INTO items (name, quantity, price, description) VALUES (?, ?, ?, ?)');
-  
-  const testItems = [
-    ['Laptop', 15, 999.99, 'High-performance laptop for business'],
-    ['Wireless Mouse', 50, 29.99, 'Ergonomic wireless mouse'],
-    ['USB-C Cable', 100, 12.99, '6ft USB-C charging cable'],
-    ['Monitor', 20, 299.99, '27-inch 4K monitor'],
-    ['Keyboard', 35, 79.99, 'Mechanical keyboard with RGB lighting'],
-    ['Webcam', 25, 89.99, '1080p HD webcam'],
-    ['Headphones', 40, 149.99, 'Noise-cancelling wireless headphones'],
-    ['External SSD', 30, 119.99, '1TB portable SSD'],
-    ['Phone Case', 200, 19.99, 'Protective phone case'],
-    ['Screen Protector', 150, 9.99, 'Tempered glass screen protector']
-  ];
-  
-  testItems.forEach(item => insert.run(...item));
-  console.log('Test data inserted successfully');
+// Insert test data if table is empty (not in test mode)
+if (process.env.NODE_ENV !== 'test') {
+  const count = db.prepare('SELECT COUNT(*) as count FROM items').get();
+  if (count.count === 0) {
+    const insert = db.prepare('INSERT INTO items (name, quantity, price, description) VALUES (?, ?, ?, ?)');
+    
+    const testItems = [
+      ['Laptop', 15, 999.99, 'High-performance laptop for business'],
+      ['Wireless Mouse', 50, 29.99, 'Ergonomic wireless mouse'],
+      ['USB-C Cable', 100, 12.99, '6ft USB-C charging cable'],
+      ['Monitor', 20, 299.99, '27-inch 4K monitor'],
+      ['Keyboard', 35, 79.99, 'Mechanical keyboard with RGB lighting'],
+      ['Webcam', 25, 89.99, '1080p HD webcam'],
+      ['Headphones', 40, 149.99, 'Noise-cancelling wireless headphones'],
+      ['External SSD', 30, 119.99, '1TB portable SSD'],
+      ['Phone Case', 200, 19.99, 'Protective phone case'],
+      ['Screen Protector', 150, 9.99, 'Tempered glass screen protector']
+    ];
+    
+    testItems.forEach(item => insert.run(...item));
+    console.log('Test data inserted successfully');
+  }
 }
 
 // Middleware
@@ -111,15 +113,20 @@ app.delete('/api/items/:id', (req, res) => {
   }
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Inventory Management Server running on http://localhost:${PORT}`);
-  console.log('Press Ctrl+C to stop the server');
-});
+// Start server only if not in test mode
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Inventory Management Server running on http://localhost:${PORT}`);
+    console.log('Press Ctrl+C to stop the server');
+  });
 
-// Graceful shutdown
-process.on('SIGINT', () => {
-  db.close();
-  console.log('\nDatabase closed. Server shutting down...');
-  process.exit(0);
-});
+  // Graceful shutdown
+  process.on('SIGINT', () => {
+    db.close();
+    console.log('\nDatabase closed. Server shutting down...');
+    process.exit(0);
+  });
+}
+
+// Export for testing
+module.exports = { app, db };
